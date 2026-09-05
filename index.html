@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ascent">
+<meta name="theme-color" content="#05070c">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>Ascent — Daily Habit Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05070c;
+    --surface:#0d121b;
+    --surface-2:#141b28;
+    --surface-3:#1b2432;
+    --border:#1e2635;
+    --blue:#2e6bff;
+    --blue-soft:#7fa6ff;
+    --blue-dim:rgba(46,107,255,0.14);
+    --text:#eef1f7;
+    --text-dim:#7c8699;
+    --text-faint:#4c5566;
+    --danger:#ff5a6a;
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(46,107,255,0.10), transparent 45%),
+      radial-gradient(circle at 100% 15%, rgba(46,107,255,0.06), transparent 40%);
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  h1,h2,h3,.display{font-family:'Sora',sans-serif;}
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:22px 20px 6px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:9px;
+  }
+  .brand-mark{
+    width:26px;height:26px;
+    border-radius:8px;
+    background:linear-gradient(155deg, var(--blue), #123a9e);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 14px rgba(46,107,255,0.35);
+  }
+  .brand-mark svg{width:14px;height:14px;}
+  .brand-name{font-size:15px;font-weight:700;letter-spacing:0.2px;color:var(--text);}
+  .icon-btn{
+    width:38px;height:38px;
+    border-radius:12px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .icon-btn:active{transform:scale(0.94);}
+  .icon-btn.active{background:var(--blue-dim);color:var(--blue-soft);border-color:rgba(46,107,255,0.35);}
+  .icon-btn svg{width:17px;height:17px;}
+
+  /* ---------- Scroll area ---------- */
+  .screen{
+    flex:1;
+    overflow-y:auto;
+    padding:4px 20px 110px;
+  }
+  .screen::-webkit-scrollbar{display:none;}
+
+  /* ---------- Today hero ---------- */
+  .hero{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    padding:18px 4px 22px;
+  }
+  .date-block{flex:1;}
+  .date-eyebrow{font-size:13px;color:var(--text-dim);font-weight:500;margin:0 0 2px;}
+  .date-main{font-size:26px;font-weight:700;margin:0;letter-spacing:-0.3px;}
+  .date-sub{font-size:13px;color:var(--text-faint);margin-top:4px;}
+
+  .ring-wrap{position:relative;width:82px;height:82px;flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-track{stroke:var(--surface-3);}
+  .ring-fill{stroke:url(#ringGrad);stroke-linecap:round;transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);}
+  .ring-label{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .ring-num{font-size:19px;font-weight:700;font-family:'Sora',sans-serif;}
+  .ring-den{font-size:10px;color:var(--text-faint);margin-top:-2px;}
+
+  /* ---------- Section label ---------- */
+  .section-row{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:18px 2px 10px;
+  }
+  .section-title{font-size:13px;font-weight:600;color:var(--text-dim);}
+  .text-link{font-size:12.5px;color:var(--blue-soft);font-weight:600;background:none;border:none;cursor:pointer;padding:4px 2px;}
+
+  /* ---------- Habit list ---------- */
+  .habit-list{display:flex;flex-direction:column;gap:8px;}
+  .habit-row{
+    display:flex;align-items:center;gap:13px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:13px 14px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .habit-row.done{background:linear-gradient(180deg, rgba(46,107,255,0.10), rgba(46,107,255,0.03));border-color:rgba(46,107,255,0.30);}
+  .habit-icon{
+    width:36px;height:36px;flex-shrink:0;
+    border-radius:11px;
+    background:var(--surface-2);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);
+  }
+  .habit-row.done .habit-icon{background:var(--blue-dim);color:var(--blue-soft);}
+  .habit-icon svg{width:17px;height:17px;}
+  .habit-name{flex:1;font-size:14.5px;font-weight:500;color:var(--text);letter-spacing:0.1px;}
+  .habit-row.done .habit-name{color:var(--text);}
+  .habit-streak{font-size:11px;color:var(--text-faint);margin-top:2px;display:flex;align-items:center;gap:3px;}
+  .habit-streak svg{width:10px;height:10px;}
+  .habit-name-wrap{flex:1;display:flex;flex-direction:column;}
+
+  .checkbox{
+    width:26px;height:26px;flex-shrink:0;
+    border-radius:8px;
+    border:1.6px solid var(--surface-3);
+    background:var(--surface-2);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .checkbox svg{width:14px;height:14px;opacity:0;transform:scale(.5);transition:all .15s ease;}
+  .checkbox.checked{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px rgba(46,107,255,0.14);}
+  .checkbox.checked svg{opacity:1;transform:scale(1);}
+  .del-btn{
+    width:26px;height:26px;flex-shrink:0;border-radius:8px;
+    background:rgba(255,90,106,0.10);border:1px solid rgba(255,90,106,0.25);
+    color:var(--danger);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .del-btn svg{width:13px;height:13px;}
+
+  .add-row{
+    display:flex;align-items:center;gap:10px;
+    border:1.4px dashed var(--surface-3);
+    border-radius:var(--radius-md);
+    padding:13px 14px;
+    color:var(--text-faint);
+    font-size:13.5px;font-weight:500;
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .add-row svg{width:15px;height:15px;}
+  .add-form{display:flex;gap:8px;margin-top:2px;}
+  .add-form input{
+    flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);
+    border-radius:var(--radius-md);padding:12px 14px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;
+  }
+  .add-form input:focus{border-color:var(--blue);}
+  .add-form button{
+    background:var(--blue);border:none;color:#fff;border-radius:var(--radius-md);
+    padding:0 16px;font-weight:600;font-size:13px;cursor:pointer;
+  }
+
+  /* ---------- Week view ---------- */
+  .week-nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 2px 14px;
+  }
+  .week-nav-btn{
+    width:34px;height:34px;border-radius:10px;background:var(--surface-2);
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);cursor:pointer;
+  }
+  .week-nav-btn svg{width:15px;height:15px;}
+  .week-label{font-size:14px;font-weight:600;font-family:'Sora',sans-serif;}
+  .week-sub{font-size:11.5px;color:var(--text-faint);text-align:center;margin-top:1px;}
+
+  .grid-scroll{overflow-x:auto;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface);}
+  .grid-scroll::-webkit-scrollbar{height:4px;}
+  .grid-scroll::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:4px;}
+  table.grid{border-collapse:collapse;width:100%;}
+  table.grid th, table.grid td{padding:0;text-align:center;}
+  .grid thead th{
+    font-size:10.5px;color:var(--text-faint);font-weight:600;padding:10px 4px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  .grid thead th.day-head{min-width:38px;}
+  .grid thead th.day-head .dnum{display:block;font-size:12.5px;color:var(--text);margin-top:2px;font-family:'Sora',sans-serif;}
+  .grid thead th.day-head.today{color:var(--blue-soft);}
+  .grid thead th.day-head.today .dnum{color:var(--blue-soft);}
+  .habit-col{
+    position:sticky;left:0;background:var(--surface);
+    text-align:left !important;padding:9px 10px !important;
+    font-size:11.5px;font-weight:500;color:var(--text-dim);
+    max-width:118px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    border-right:1px solid var(--border);
+  }
+  .grid tbody tr:not(:last-child) td{border-bottom:1px solid var(--border);}
+  .cell-box{
+    width:22px;height:22px;margin:0 auto;border-radius:6px;
+    border:1.4px solid var(--surface-3);background:var(--surface-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cell-box svg{width:11px;height:11px;opacity:0;}
+  .cell-box.checked{background:var(--blue);border-color:var(--blue);}
+  .cell-box.checked svg{opacity:1;}
+  .cell-box.future{opacity:0.35;cursor:default;}
+
+  /* ---------- Stats ---------- */
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:20px;margin-bottom:12px;
+  }
+  .stat-top{display:flex;align-items:center;gap:18px;}
+  .stat-num{font-size:32px;font-weight:800;font-family:'Sora',sans-serif;}
+  .stat-caption{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:70px;margin-top:16px;}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%;}
+  .bar{width:100%;max-width:22px;border-radius:6px 6px 3px 3px;background:var(--surface-3);position:relative;overflow:hidden;}
+  .bar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,var(--blue-soft),var(--blue));border-radius:6px 6px 3px 3px;transition:height .5s ease;}
+  .bar-day{font-size:10px;color:var(--text-faint);}
+
+  .streak-list{display:flex;flex-direction:column;gap:2px;}
+  .streak-item{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border);}
+  .streak-item:last-child{border-bottom:none;}
+  .streak-rank{width:22px;font-size:12px;color:var(--text-faint);font-weight:600;}
+  .streak-name{flex:1;font-size:13.5px;font-weight:500;}
+  .streak-val{font-size:13px;font-weight:700;color:var(--blue-soft);display:flex;align-items:center;gap:4px;font-family:'Sora',sans-serif;}
+  .streak-val svg{width:12px;height:12px;}
+
+  /* ---------- Bottom nav ---------- */
+  .bottomnav{
+    position:absolute;bottom:0;left:0;right:0;
+    display:flex;
+    background:rgba(10,13,20,0.85);
+    backdrop-filter:blur(16px);
+    border-top:1px solid var(--border);
+    padding:10px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+  .nav-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+    background:none;border:none;color:var(--text-faint);cursor:pointer;
+    padding:6px 0;font-family:'Inter',sans-serif;
+  }
+  .nav-btn svg{width:20px;height:20px;}
+  .nav-btn span{font-size:10.5px;font-weight:600;}
+  .nav-btn.active{color:var(--blue-soft);}
+
+  .empty{padding:30px 10px;text-align:center;color:var(--text-faint);font-size:13px;}
+  .loading{
+    position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);font-size:13px;z-index:50;
+  }
+  .fade{animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="loading" id="loading">Loading your habits…</div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7fa6ff"/>
+      <stop offset="100%" stop-color="#2e6bff"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Icons ---------------- */
+  const ICON = {
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    chevR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+    flame:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c1.5 1 2 2.5 2 4a5 5 0 0 1-10 0c0-5 3-6 5-13Z"/></svg>',
+    dumbbell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 4 4M17.5 17.5 20 20M2 8l3-3M22 16l-3 3"/><rect x="6" y="6" width="5" height="5" rx="1.2" transform="rotate(45 8.5 8.5)"/><rect x="13" y="13" width="5" height="5" rx="1.2" transform="rotate(45 15.5 15.5)"/><path d="M9.5 9.5l5 5"/></svg>',
+    noSugar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 6V4M10 4h4"/><path d="M6.5 8.5l11 9"/></svg>',
+    play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3Z" fill="currentColor" stroke="none"/></svg>',
+    trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4"/><path d="M12 13v3M9 20h6M9 18h6v2H9z"/></svg>',
+    code:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg>',
+    layers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 9l10 6 10-6-10-6Z"/><path d="M2 15l10 6 10-6"/></svg>',
+    droplet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/></svg>',
+    history:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>',
+    home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>',
+    grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>',
+    bar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
+    mark:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5"/></svg>'
+  };
+
+  function iconFor(id){
+    if(id==='exercise') return ICON.dumbbell;
+    if(id==='no_sugar') return ICON.noSugar;
+    if(id==='dsa_lecture') return ICON.play;
+    if(id.startsWith('contest_')) return ICON.trophy;
+    if(id.startsWith('dsaset_')) return ICON.code;
+    if(id==='striver') return ICON.layers;
+    if(id==='water') return ICON.droplet;
+    if(id==='revise') return ICON.history;
+    return ICON.check;
+  }
+
+  const DEFAULT_HABITS = [
+    {id:'exercise', name:'Exercise'},
+    {id:'no_sugar', name:'No sugar & fast food'},
+    {id:'dsa_lecture', name:'DSA lecture'},
+    {id:'contest_1', name:'Q1 — Contest'},
+    {id:'contest_2', name:'Q2 — Contest'},
+    {id:'contest_3', name:'Q3 — Contest'},
+    {id:'contest_4', name:'Q4 — Contest'},
+    {id:'dsaset_1', name:'Q1 — DSA'},
+    {id:'dsaset_2', name:'Q2 — DSA'},
+    {id:'dsaset_3', name:'Q3 — DSA'},
+    {id:'dsaset_4', name:'Q4 — DSA'},
+    {id:'striver', name:"Striver's A2Z series"},
+    {id:'water', name:'Daily 3L water'},
+    {id:'revise', name:'Revise previous day'}
+  ];
+
+  const STORAGE_KEY = 'ascent-habit-state-v1';
+  const DAY_LABELS = ['S','M','T','W','T','F','S'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  let state = null;          // { habits: [...], entries: { 'YYYY-MM-DD': {habitId:true} } }
+  let tab = 'today';         // today | week | stats
+  let weekOffset = 0;        // 0 = current week
+  let editMode = false;
+  let showAddForm = false;
+
+  /* ---------------- Date helpers ---------------- */
+  function fmt(d){
+    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function startOfWeek(d){
+    const dt = new Date(d);
+    const day = dt.getDay(); // 0 = Sunday
+    dt.setDate(dt.getDate()-day);
+    dt.setHours(0,0,0,0);
+    return dt;
+  }
+  function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+  function isFuture(d){ const t=new Date(); t.setHours(0,0,0,0); return d>t; }
+  function isSameDay(a,b){ return fmt(a)===fmt(b); }
+
+  /* ---------------- Storage ---------------- */
+  async function loadState(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        state = JSON.parse(res.value);
+        // merge in any newly-added default habits safety (not overwriting existing custom lists)
+        return;
+      }
+    }catch(e){ /* not found or error -> fall through to init */ }
+    state = { habits: DEFAULT_HABITS.slice(), entries:{} };
+    await saveState();
+  }
+  async function saveState(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    }catch(e){ console.error('Storage save failed', e); }
+  }
+
+  /* ---------------- Data ops ---------------- */
+  function entriesFor(dateStr){
+    if(!state.entries[dateStr]) state.entries[dateStr] = {};
+    return state.entries[dateStr];
+  }
+  function isDone(dateStr, habitId){
+    return !!(state.entries[dateStr] && state.entries[dateStr][habitId]);
+  }
+  function toggle(dateStr, habitId){
+    const e = entriesFor(dateStr);
+    e[habitId] = !e[habitId];
+    saveState();
+  }
+  function countDone(dateStr){
+    const total = state.habits.length;
+    let done=0;
+    state.habits.forEach(h=>{ if(isDone(dateStr,h.id)) done++; });
+    return {done, total};
+  }
+  function streakFor(habitId){
+    let streak=0;
+    let cursor = new Date();
+    cursor.setHours(0,0,0,0);
+    // if today not done yet, start counting from yesterday (so an unmarked "today" doesn't zero out a live streak)
+    if(!isDone(fmt(cursor), habitId)) cursor = addDays(cursor,-1);
+    while(true){
+      const key = fmt(cursor);
+      if(isDone(key, habitId)){ streak++; cursor = addDays(cursor,-1); }
+      else break;
+      if(streak>3650) break;
+    }
+    return streak;
+  }
+
+  /* ---------------- Rendering ---------------- */
+  function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
+
+  function renderShell(){
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark">${ICON.mark}</div>
+          <div class="brand-name">Ascent</div>
+        </div>
+        <div class="icon-btn ${editMode?'active':''}" id="editBtn">${ICON.edit}</div>
+      </div>
+      <div class="screen" id="screen"></div>
+      <div class="bottomnav">
+        <button class="nav-btn ${tab==='today'?'active':''}" data-tab="today">${ICON.home}<span>Today</span></button>
+        <button class="nav-btn ${tab==='week'?'active':''}" data-tab="week">${ICON.grid}<span>Week</span></button>
+        <button class="nav-btn ${tab==='stats'?'active':''}" data-tab="stats">${ICON.bar}<span>Stats</span></button>
+      </div>
+    `;
+    document.getElementById('editBtn').onclick = ()=>{ editMode=!editMode; showAddForm=false; renderShell(); };
+    app.querySelectorAll('.nav-btn').forEach(b=>{
+      b.onclick = ()=>{ tab=b.dataset.tab; editMode=false; showAddForm=false; renderShell(); };
+    });
+    renderScreen();
+  }
+
+  function renderScreen(){
+    const screen = document.getElementById('screen');
+    if(tab==='today') screen.innerHTML = todayHTML();
+    else if(tab==='week') screen.innerHTML = weekHTML();
+    else screen.innerHTML = statsHTML();
+    bindScreenEvents();
+  }
+
+  function todayHTML(){
+    const today = new Date();
+    const key = fmt(today);
+    const {done,total} = countDone(key);
+    const pct = total? done/total : 0;
+    const r=34, circ=2*Math.PI*r;
+    const offset = circ*(1-pct);
+    const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];
+
+    const rows = state.habits.map(h=>{
+      const d = isDone(key,h.id);
+      const st = streakFor(h.id);
+      return `
+      <div class="habit-row fade ${d?'done':''}" data-id="${h.id}">
+        <div class="habit-icon">${iconFor(h.id)}</div>
+        <div class="habit-name-wrap">
+          <div class="habit-name">${h.name}</div>
+          ${st>0?`<div class="habit-streak">${ICON.flame}${st} day${st===1?'':'s'}</div>`:''}
+        </div>
+        ${editMode
+          ? `<div class="del-btn" data-del="${h.id}">${ICON.close}</div>`
+          : `<div class="checkbox ${d?'checked':''}" data-toggle="${h.id}">${ICON.check}</div>`
+        }
+      </div>`;
+    }).join('');
+
+    return `
+      <div class="hero fade">
+        <div class="date-block">
+          <p class="date-eyebrow">${dayName}</p>
+          <p class="date-main">${MONTHS[today.getMonth()]} ${today.getDate()}</p>
+          <p class="date-sub">${done} of ${total} habits done</p>
+        </div>
+        <div class="ring-wrap">
+          <svg width="82" height="82" viewBox="0 0 82 82">
+            <circle class="ring-track" cx="41" cy="41" r="${r}" fill="none" stroke-width="7"/>
+            <circle class="ring-fill" cx="41" cy="41" r="${r}" fill="none" stroke-width="7"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+          </svg>
+          <div class="ring-label"><div class="ring-num">${done}</div><div class="ring-den">/ ${total}</div></div>
+        </div>
+      </div>
+      <div class="section-row"><span class="section-title">Today's habits</span></div>
+      <div class="habit-list">${rows || `<div class="empty">No habits yet — add your first one below.</div>`}</div>
+      ${editMode ? renderAddArea() : ''}
+    `;
+  }
+
+  function renderAddArea(){
+    if(showAddForm){
+      return `
+      <div class="add-form fade" style="margin-top:10px;">
+        <input id="newHabitInput" type="text" placeholder="Habit name" maxlength="40" autofocus/>
+        <button id="newHabitSave">Add</button>
+      </div>`;
+    }
+    return `<div class="add-row fade" id="showAddRow" style="margin-top:10px;">${ICON.plus} Add habit</div>`;
+  }
+
+  function weekHTML(){
+    const base = addDays(startOfWeek(new Date()), weekOffset*7);
+    const days = Array.from({length:7}, (_,i)=>addDays(base,i));
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    const head = days.map(d=>{
+      const t = isSameDay(d,today);
+      return `<th class="day-head ${t?'today':''}">${DAY_LABELS[d.getDay()]}<span class="dnum">${d.getDate()}</span></th>`;
+    }).join('');
+
+    const rows = state.habits.map(h=>{
+      const cells = days.map(d=>{
+        const key = fmt(d);
+        const fut = isFuture(d);
+        const done = isDone(key,h.id);
+        return `<td><div class="cell-box ${done?'checked':''} ${fut?'future':''}" ${fut?'':`data-cell="${key}|${h.id}"`}>${ICON.check}</div></td>`;
+      }).join('');
+      return `<tr><td class="habit-col" title="${h.name}">${h.name}</td>${cells}</tr>`;
+    }).join('');
+
+    const rangeLabel = `${MONTHS[days[0].getMonth()].slice(0,3)} ${days[0].getDate()} – ${MONTHS[days[6].getMonth()].slice(0,3)} ${days[6].getDate()}`;
+
+    return `
+      <div class="week-nav fade">
+        <div class="week-nav-btn" id="prevWeek">${ICON.chevL}</div>
+        <div style="text-align:center;">
+          <div class="week-label">${weekOffset===0?'This week':rangeLabel}</div>
+          ${weekOffset===0?`<div class="week-sub">${rangeLabel}</div>`:''}
+        </div>
+        <div class="week-nav-btn" id="nextWeek" style="${weekOffset>=0?'opacity:.3;pointer-events:none;':''}">${ICON.chevR}</div>
+      </div>
+      <div class="grid-scroll fade">
+        <table class="grid">
+          <thead><tr><th class="habit-col" style="background:var(--surface);">Habit</th>${head}</tr></thead>
+          <tbody>${rows || `<tr><td colspan="8" class="empty">No habits yet.</td></tr>`}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function statsHTML(){
+    const today = new Date(); today.setHours(0,0,0,0);
+    // month completion
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    let monthDone=0, monthTotal=0;
+    for(let d=new Date(monthStart); d<=today; d=addDays(d,1)){
+      const {done,total} = countDone(fmt(d));
+      monthDone+=done; monthTotal+=total;
+    }
+    const monthPct = monthTotal? Math.round((monthDone/monthTotal)*100) : 0;
+
+    // last 7 days bars
+    const days = Array.from({length:7},(_,i)=>addDays(today,i-6));
+    const bars = days.map(d=>{
+      const {done,total} = countDone(fmt(d));
+      const h = total? Math.max(4,(done/total)*100) : 4;
+      return `<div class="bar-col">
+        <div class="bar" style="height:70px;"><div class="bar-fill" style="height:${h}%;"></div></div>
+        <div class="bar-day">${DAY_LABELS[d.getDay()]}</div>
+      </div>`;
+    }).join('');
+
+    // streaks sorted
+    const streaks = state.habits.map(h=>({name:h.name, id:h.id, val:streakFor(h.id)}))
+      .sort((a,b)=>b.val-a.val);
+    const streakRows = streaks.map((s,i)=>`
+      <div class="streak-item">
+        <div class="streak-rank">${i+1}</div>
+        <div class="streak-name">${s.name}</div>
+        <div class="streak-val">${ICON.flame}${s.val}</div>
+      </div>`).join('');
+
+    return `
+      <div class="section-row" style="margin-top:14px;"><span class="section-title">This month</span></div>
+      <div class="stat-card fade">
+        <div class="stat-top">
+          <div>
+            <div class="stat-num">${monthPct}%</div>
+            <div class="stat-caption">habits completed in ${MONTHS[today.getMonth()]}</div>
+          </div>
+        </div>
+        <div class="bars">${bars}</div>
+      </div>
+      <div class="section-row"><span class="section-title">Current streaks</span></div>
+      <div class="stat-card fade" style="padding:8px 16px;">
+        <div class="streak-list">${streakRows || `<div class="empty">No habits yet.</div>`}</div>
+      </div>
+    `;
+  }
+
+  /* ---------------- Event binding ---------------- */
+  function bindScreenEvents(){
+    document.querySelectorAll('[data-toggle]').forEach(elm=>{
+      elm.addEventListener('click', ()=>{
+        const key = fmt(new Date());
+        toggle(key, elm.dataset.toggle);
+        renderScreen();
+      });
+    });
+    document.querySelectorAll('[data-cell]').forEach(elm=>{
+      elm.addEventListener('click', ()=>{
+        const [key, habitId] = elm.dataset.cell.split('|');
+        toggle(key, habitId);
+        renderScreen();
+      });
+    });
+    document.querySelectorAll('[data-del]').forEach(elm=>{
+      elm.addEventListener('click', ()=>{
+        const id = elm.dataset.del;
+        state.habits = state.habits.filter(h=>h.id!==id);
+        saveState();
+        renderScreen();
+      });
+    });
+    const prevWeek = document.getElementById('prevWeek');
+    const nextWeek = document.getElementById('nextWeek');
+    if(prevWeek) prevWeek.onclick = ()=>{ weekOffset--; renderScreen(); };
+    if(nextWeek) nextWeek.onclick = ()=>{ if(weekOffset<0){ weekOffset++; renderScreen(); } };
+
+    const showAddRow = document.getElementById('showAddRow');
+    if(showAddRow) showAddRow.onclick = ()=>{ showAddForm=true; renderScreen(); setTimeout(()=>{ const i=document.getElementById('newHabitInput'); if(i) i.focus(); },0); };
+    const saveBtn = document.getElementById('newHabitSave');
+    if(saveBtn){
+      const commit = ()=>{
+        const input = document.getElementById('newHabitInput');
+        const val = input.value.trim();
+        if(val){
+          const id = 'custom_'+Date.now();
+          state.habits.push({id, name:val});
+          saveState();
+        }
+        showAddForm=false;
+        renderScreen();
+      };
+      saveBtn.onclick = commit;
+      const input = document.getElementById('newHabitInput');
+      input.addEventListener('keydown', e=>{ if(e.key==='Enter') commit(); });
+    }
+  }
+
+  /* ---------------- Init ---------------- */
+  async function init(){
+    await loadState();
+    renderShell();
+  }
+  init();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
